@@ -1,0 +1,51 @@
+# Identity lives in untracked files so no email address is committed here.
+# Generate them with: bash setup-git-identity.sh
+[include]
+	path = ~/.gitconfig-identity
+
+[includeIf "gitdir:~/work/"]
+	path = ~/.gitconfig-work
+
+[user]
+	# Refuse to invent an identity from the hostname if the includes are missing.
+	useConfigOnly = true
+
+[init]
+	defaultBranch = main
+
+[core]
+	editor = nvim
+	excludesfile = ~/.gitignore_global
+	autocrlf = input
+
+[pull]
+	rebase = true
+
+[push]
+	default = simple
+	autoSetupRemote = true
+	followTags = true
+
+[fetch]
+	prune = true
+	pruneTags = true
+
+[rebase]
+	autoStash = true
+	autoSquash = true
+
+[merge]
+	conflictstyle = zdiff3
+
+[diff]
+	algorithm = histogram
+	colorMoved = default
+
+[rerere]
+	enabled = true
+
+[branch]
+	sort = -committerdate
+
+[log]
+	date = iso

@@ -1,0 +1,36 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`
+// from the command palette.
+[
+  {
+    "context": "VimControl && vim_mode == normal && !menu",
+    "bindings": {
+      // 2. Define your Space-led leader commands
+      "space s f": "file_finder::Toggle",
+      "space s s": "project_symbols::Toggle",
+      "space q": "diagnostics::Deploy",
+      "space t a": [
+        "task::Spawn",
+        {
+          "task_name": ".NET Run all tests",
+        },
+      ],
+      "space t f": [
+        "task::Spawn",
+        {
+          "task_name": ".NET Test current file",
+        },
+      ],
+      "space t s": [
+        "task::Spawn",
+        {
+          "task_name": ".NET Test current method",
+        },
+      ],
+    },
+  },
+]

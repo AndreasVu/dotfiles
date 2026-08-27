@@ -1,0 +1,32 @@
+- defaults:
+    link:
+      relink: true
+      force: true
+      create: true
+
+- clean:
+    "~":
+    "~/.config/ghostty":
+    "~/.config/zed":
+
+- create:
+    - ~/.config
+    - ~/.config/ghostty
+    - ~/.config/zed
+    - ~/code
+    - ~/work
+
+- link:
+    ~/.profile: profile
+    ~/.bash_logout: bash_logout
+    ~/.gitconfig: gitconfig
+    ~/.gitignore_global: gitignore_global
+    ~/.ideavimrc: ideavimrc
+    ~/.zshenv: zshenv
+    ~/.zshrc: zshrc
+    ~/.config/zed:
+      glob: true
+      path: zed/*
+    ~/.config/ghostty:
+      glob: true
+      path: ghostty/*

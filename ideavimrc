@@ -1,0 +1,12 @@
+let mapleader=" "
+set scrolloff=12
+set clipboard+=unnamedplus
+
+nnoremap gr :action FindUsages<CR>
+nnoremap gc :action GotoClass<CR>
+nnoremap gI :action GotoImplementation<CR>
+nnoremap gd :action GotoDeclaration<CR>
+nnoremap gp :action GotToSuperMethod<CR>
+nnoremap gt :action GotoTest<CR>
+nnoremap <leader>sf :action SearchEverywhere<CR>
+nnoremap <C-.> :action QuickActions<CR>

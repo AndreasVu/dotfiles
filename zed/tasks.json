@@ -1,0 +1,25 @@
+// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
+//
+// Example:
+[
+  {
+    "label": ".NET Format solution",
+    "command": "dotnet format -v d --no-restore",
+  },
+  {
+    "label": ".NET Run all tests",
+    "command": "dotnet test",
+  },
+  {
+    "label": ".NET Test current file",
+    "command": "dotnet test --filter FullyQualifiedName~$ZED_STEM",
+  },
+  {
+    "label": ".NET Test current method",
+    "command": "dotnet test --filter DisplayName~$ZED_SYMBOL",
+  },
+  {
+    "label": ".NET build",
+    "command": "dotnet build",
+  },
+]
