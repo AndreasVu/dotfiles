@@ -129,12 +129,14 @@ else
 fi
 
 # 2. Core Prerequisites
-# ripgrep and fd back Telescope's live_grep and file finder in the Neovim config.
+# git, unzip and gzip are Neovim dependencies: plugins are cloned and release
+# archives unpacked during install. ripgrep and fd back Telescope's live_grep
+# and file finder.
 log "Checking core prerequisites..."
 if [ "$OS" == "arch" ]; then
-    ensure_packages curl git tar sed fzf unzip wget jq gnupg ca-certificates ripgrep fd
+    ensure_packages curl git tar sed fzf unzip gzip wget jq gnupg ca-certificates ripgrep fd
 else
-    ensure_packages curl git tar sed fzf unzip wget jq gnupg ca-certificates ripgrep fd-find
+    ensure_packages curl git tar sed fzf unzip gzip wget jq gnupg ca-certificates ripgrep fd-find
     # Debian ships the fd binary as fdfind; Telescope and muscle memory both want fd.
     if ! have_command fd && have_command fdfind; then
         mkdir -p "$HOME/.local/bin"
@@ -144,6 +146,8 @@ else
 fi
 
 # 3. Development Essentials Setup
+# Neovim needs a C compiler and make: treesitter parsers are compiled with cc,
+# and both telescope-fzf-native and LuaSnip's jsregexp build with make on install.
 log "Checking build essentials..."
 if [ "$OS" == "arch" ]; then
     ensure_packages base-devel
@@ -151,7 +155,62 @@ else
     ensure_packages build-essential
 fi
 
-# 4. Editors and clipboard support
+# 4. tree-sitter CLI (Neovim dependency)
+# nvim-treesitter shells out to the tree-sitter CLI to build any parser it cannot
+# fetch prebuilt, and :checkhealth flags it as missing otherwise. Only recent
+# Debian/Ubuntu releases carry a tree-sitter-cli package, so fall back to the
+# upstream release binary.
+install_tree_sitter_binary() {
+    local asset tmpdir
+    case "$(uname -m)" in
+        x86_64) asset="tree-sitter-linux-x64.gz" ;;
+        aarch64|arm64) asset="tree-sitter-linux-arm64.gz" ;;
+        *) warn "No tree-sitter release build for $(uname -m). Skipping."; return 1 ;;
+    esac
+
+    tmpdir="$(mktemp -d)"
+    if ! curl -fsSL -o "$tmpdir/$asset" \
+        "https://github.com/tree-sitter/tree-sitter/releases/latest/download/$asset"; then
+        rm -rf "$tmpdir"
+        warn "Could not download $asset."
+        return 1
+    fi
+
+    if ! gunzip -f "$tmpdir/$asset"; then
+        rm -rf "$tmpdir"
+        warn "Downloaded tree-sitter archive was not readable."
+        return 1
+    fi
+
+    mkdir -p "$HOME/.local/bin"
+    install -m 755 "$tmpdir/${asset%.gz}" "$HOME/.local/bin/tree-sitter"
+    rm -rf "$tmpdir"
+}
+
+if have_command tree-sitter; then
+    skip "tree-sitter CLI is already installed at $(command -v tree-sitter)."
+elif [ "$OS" == "arch" ]; then
+    log "Installing the tree-sitter CLI via pacman..."
+    ensure_packages tree-sitter-cli
+    success "tree-sitter CLI installed via pacman."
+else
+    log "Installing the tree-sitter CLI..."
+    apt_update_once
+    if sudo apt-get install -y tree-sitter-cli 2>/dev/null; then
+        success "tree-sitter CLI installed via apt."
+    else
+        log "tree-sitter-cli is not in apt on this release. Downloading the latest GitHub release binary..."
+        # Best effort: the function warns for itself, and set -e would take the
+        # whole script down with it otherwise.
+        if install_tree_sitter_binary; then
+            success "tree-sitter CLI installed to ~/.local/bin."
+        else
+            warn "tree-sitter CLI not installed; nvim-treesitter cannot build parsers from source."
+        fi
+    fi
+fi
+
+# 5. Editors and clipboard support
 # Neovim's "+ / "* registers need a clipboard bridge. On Linux that is
 # xclip/wl-clipboard; on WSL it is win32yank, which talks to the Windows clipboard
 # and works whether or not WSLg is available.
@@ -263,7 +322,7 @@ else
     fi
 fi
 
-# 5. Shell Setup (Zsh & Oh My Zsh)
+# 6. Shell Setup (Zsh & Oh My Zsh)
 log "Checking Zsh..."
 ensure_packages zsh
 
@@ -313,7 +372,7 @@ else
     fi
 fi
 
-# 6. Terminal Deployment (Ghostty)
+# 7. Terminal Deployment (Ghostty)
 if [ "$INSTALL_GUI" = false ]; then
     skip "Ghostty (GUI application)."
 elif have_command ghostty; then
@@ -330,7 +389,7 @@ else
     fi
 fi
 
-# 7. Git Tooling (Lazygit with Dynamic Fallback)
+# 8. Git Tooling (Lazygit with Dynamic Fallback)
 # Everything here is best effort: lazygit is a convenience, so a download failure
 # warns and moves on rather than killing the rest of the bootstrap. Work happens
 # in a temp dir so a failed run never litters the dotfiles repo.
@@ -390,7 +449,7 @@ else
     fi
 fi
 
-# 8. Browser Setup (Zen Browser)
+# 9. Browser Setup (Zen Browser)
 if [ "$INSTALL_GUI" = false ]; then
     skip "Zen Browser (GUI application)."
 elif have_command zen || have_command zen-browser || [ -d "$HOME/.tarball-installations/zen" ]; then
@@ -406,7 +465,7 @@ else
     rm -f "$ZEN_INSTALLER"
 fi
 
-# 9. Editor Setup (Zed Editor)
+# 10. Editor Setup (Zed Editor)
 if [ "$INSTALL_GUI" = false ]; then
     skip "Zed (GUI application)."
 elif have_command zed; then
@@ -420,7 +479,7 @@ else
     fi
 fi
 
-# 10. Language Runtime (.NET SDK 10.0 Setup)
+# 11. Language Runtime (.NET SDK 10.0 Setup)
 if have_command dotnet; then
     skip ".NET SDK is already installed at $(command -v dotnet)."
 else
@@ -437,7 +496,7 @@ else
     fi
 fi
 
-# 11. Rust toolchain
+# 12. Rust toolchain
 if have_command rustup || [ -x "$HOME/.cargo/bin/rustup" ]; then
     skip "Rust is already installed."
 else
@@ -451,7 +510,7 @@ else
     fi
 fi
 
-# 12. Node via nvm
+# 13. Node via nvm
 export NVM_DIR="$HOME/.nvm"
 if [ -s "$NVM_DIR/nvm.sh" ]; then
     skip "nvm is already installed at $NVM_DIR."
@@ -486,7 +545,7 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
     fi
 fi
 
-# 13. Nerd Font (JetBrains Mono)
+# 14. Nerd Font (JetBrains Mono)
 # Only useful where something renders it, so it follows the GUI flag. On WSL the
 # font belongs on the Windows side, in the terminal you actually run there.
 NERD_FONT_DIR="$HOME/.local/share/fonts/JetBrainsMonoNerdFont"
@@ -534,7 +593,17 @@ else
     fi
 fi
 
-# 14. Neovim configuration
+# A colour emoji font is separate from the Nerd Font; without one, emoji in
+# plugin UIs and commit messages render as tofu boxes.
+if [ "$INSTALL_GUI" = false ]; then
+    skip "Colour emoji font (no GUI; install it on the Windows side for WSL)."
+elif [ "$OS" == "arch" ]; then
+    ensure_packages noto-fonts-emoji
+else
+    ensure_packages fonts-noto-color-emoji
+fi
+
+# 15. Neovim configuration
 NVIM_CONFIG_REPO="https://github.com/AndreasVu/nvim.git"
 NVIM_CONFIG_DIR="$HOME/.config/nvim"
 
@@ -557,7 +626,7 @@ if [ ! -d "$NVIM_CONFIG_DIR/.git" ]; then
     fi
 fi
 
-# 15. zoxide
+# 16. zoxide
 if have_command zoxide; then
     skip "zoxide is already installed at $(command -v zoxide)."
 else
@@ -569,7 +638,7 @@ else
     fi
 fi
 
-# 16. Discord
+# 17. Discord
 # Debian and Ubuntu have no Discord package, and the official deb is the only
 # build Discord ships for them. Arch carries it in extra.
 install_discord_deb() {
@@ -611,7 +680,7 @@ else
     fi
 fi
 
-# 17. .NET global tools
+# 18. .NET global tools
 export DOTNET_ROOT="${DOTNET_ROOT:-$HOME/.dotnet}"
 export PATH="$DOTNET_ROOT:$HOME/.dotnet/tools:$PATH"
 

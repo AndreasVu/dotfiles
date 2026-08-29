@@ -52,8 +52,9 @@ Two deliberate exceptions:
 
 | Step | Tools |
 | --- | --- |
-| Prerequisites | curl, git, tar, sed, fzf, unzip, wget, jq, gnupg, ca-certificates, ripgrep, fd |
-| Build | build-essential / base-devel |
+| Prerequisites | curl, git, tar, sed, fzf, unzip, gzip, wget, jq, gnupg, ca-certificates, ripgrep, fd |
+| Build | build-essential / base-devel (gcc + make) |
+| Treesitter | tree-sitter CLI (apt/pacman, else the upstream release binary) |
 | Editors | Neovim 0.12+, clipboard bridge (xclip + wl-clipboard, or win32yank on WSL) |
 | Shell | zsh, Oh My Zsh, zsh-autosuggestions, zsh-syntax-highlighting, zsh-completions, `chsh` to zsh |
 | Terminal | Ghostty *(GUI)* |
@@ -62,7 +63,7 @@ Two deliberate exceptions:
 | Editor | Zed *(GUI)* |
 | Runtimes | .NET SDK 10.0, Rust (rustup), Node (nvm, latest LTS) |
 | Neovim config | clone of [AndreasVu/nvim](https://github.com/AndreasVu/nvim) into `~/.config/nvim` |
-| Fonts | JetBrainsMono Nerd Font *(GUI)* |
+| Fonts | JetBrainsMono Nerd Font, Noto Color Emoji *(GUI)* |
 | Navigation | zoxide |
 | Chat | Discord *(GUI)* |
 | .NET tools | lazydotnet |
