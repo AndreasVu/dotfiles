@@ -157,9 +157,9 @@ fi
 
 # 4. tree-sitter CLI (Neovim dependency)
 # nvim-treesitter shells out to the tree-sitter CLI to build any parser it cannot
-# fetch prebuilt, and :checkhealth flags it as missing otherwise. Only recent
-# Debian/Ubuntu releases carry a tree-sitter-cli package, so fall back to the
-# upstream release binary.
+# fetch prebuilt, and :checkhealth flags it as missing otherwise. Distro packages
+# lag behind the grammars nvim-treesitter pulls, so always take the latest
+# upstream release binary rather than whatever apt or pacman carries.
 install_tree_sitter_binary() {
     local asset tmpdir
     case "$(uname -m)" in
@@ -189,24 +189,14 @@ install_tree_sitter_binary() {
 
 if have_command tree-sitter; then
     skip "tree-sitter CLI is already installed at $(command -v tree-sitter)."
-elif [ "$OS" == "arch" ]; then
-    log "Installing the tree-sitter CLI via pacman..."
-    ensure_packages tree-sitter-cli
-    success "tree-sitter CLI installed via pacman."
 else
-    log "Installing the tree-sitter CLI..."
-    apt_update_once
-    if sudo apt-get install -y tree-sitter-cli 2>/dev/null; then
-        success "tree-sitter CLI installed via apt."
+    log "Installing the latest tree-sitter CLI from the GitHub releases page..."
+    # Best effort: the function warns for itself, and set -e would take the
+    # whole script down with it otherwise.
+    if install_tree_sitter_binary; then
+        success "tree-sitter CLI installed to ~/.local/bin."
     else
-        log "tree-sitter-cli is not in apt on this release. Downloading the latest GitHub release binary..."
-        # Best effort: the function warns for itself, and set -e would take the
-        # whole script down with it otherwise.
-        if install_tree_sitter_binary; then
-            success "tree-sitter CLI installed to ~/.local/bin."
-        else
-            warn "tree-sitter CLI not installed; nvim-treesitter cannot build parsers from source."
-        fi
+        warn "tree-sitter CLI not installed; nvim-treesitter cannot build parsers from source."
     fi
 fi
 
