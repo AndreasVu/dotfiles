@@ -1,6 +1,8 @@
 # dotfiles
 
-Managed with [dotbot](https://github.com/anishathalye/dotbot). Targets Debian/Ubuntu and Arch.
+Managed with [dotbot](https://github.com/anishathalye/dotbot). Targets Debian/Ubuntu
+and Arch, with a PowerShell port of the tool installer for Windows (see
+[Windows](#windows)).
 
 ## Bootstrap on a fresh machine
 
@@ -127,6 +129,72 @@ works with or without WSLg.
 The dotfiles themselves are linked either way. The Ghostty and Zed configs are
 harmless on a machine without those apps, and stay in place for when you sync the
 same repo to a desktop.
+
+## Windows
+
+`bootstrap.sh` and friends are bash, so Windows gets its own PowerShell port of the
+same steps. It needs PowerShell 7+ and winget.
+
+```powershell
+git clone --recurse-submodules https://github.com/AndreasVu/dotfiles.git $HOME\src\dotfiles
+cd $HOME\src\dotfiles
+pwsh -File .\bootstrap.ps1
+```
+
+| Script | Counterpart |
+| --- | --- |
+| `bootstrap.ps1` | `bootstrap.sh` |
+| `install-required.ps1` | `install-required.sh` |
+| `setup-git-identity.ps1` | `setup-git-identity.sh` |
+
+Same flags, PowerShell-style: `-ToolsOnly`, `-SkipGit`, `-NoGui`, `-Gui`, `-Help`,
+plus `-DryRun`, which walks every step without installing. Use it — the Visual
+Studio Build Tools step is a multi-GB download you do not want to trigger by
+accident. Re-running is safe and prints `[SKIP]` exactly like the bash version.
+
+Everything installs through winget rather than apt/pacman. Two steps are simpler
+than on Debian: winget carries a current Neovim, so there is no release-tarball
+fallback, and Zed installs from its own package instead of a piped shell script.
+tree-sitter is still a GitHub release download, into `~\.local\bin`.
+
+**There is no link step.** `install.conf.yaml` links `zshrc`, `zshenv`, `profile`,
+`bash_logout` and the Ghostty config, none of which have a Windows target, and
+Windows symlinks need Developer Mode or elevation. To pick up the shared git config:
+
+```powershell
+git config --global include.path "$HOME\src\dotfiles\gitconfig"
+```
+
+Note that `gitconfig` sets `core.autocrlf = input`, which is deliberate but not the
+Windows default of `true`.
+
+### Applications with no Windows build
+
+These are reported as `[UNSUPPORTED]` during the run and again in a summary at the
+end, rather than being silently skipped.
+
+| Application | Why | Installed instead |
+| --- | --- | --- |
+| Ghostty | macOS and Linux only; a Windows GUI is on the roadmap but unreleased, and the ports on GitHub are unaffiliated | nothing — use Windows Terminal, WezTerm, or Ghostty inside WSL |
+| zsh | no native Windows build (WSL, MSYS2 or Cygwin only) | PowerShell 7 |
+| Oh My Zsh | a zsh framework | oh-my-posh |
+| zsh-autosuggestions | zsh plugin | PSReadLine `-PredictionSource HistoryAndPlugin` |
+| zsh-syntax-highlighting | zsh plugin | PSReadLine syntax colouring (built in) |
+| zsh-completions | zsh plugin | PSReadLine menu completion |
+| `chsh` | Windows has no login shell to change | set PowerShell 7 as the Windows Terminal default profile |
+| nvm (nvm-sh) | a POSIX shell script | [fnm](https://github.com/Schniz/fnm) — per-user, no elevation to switch versions, and it keeps `--lts` |
+
+Reported as `[NO-OP]` because Windows already provides them: `ca-certificates`
+(OS cert store), `unzip`/`gzip` (`Expand-Archive` and the bundled `tar.exe`), `sed`,
+the `fdfind`→`fd` shim (a Debian packaging quirk), Noto Color Emoji (Segoe UI Emoji
+ships with Windows), and the clipboard bridge — Neovim on Windows talks to the Win32
+clipboard directly, so xclip, wl-clipboard and win32yank are all unnecessary.
+
+### Shell config
+
+`install-required.ps1` installs oh-my-posh and ensures PSReadLine 2.2+, but does
+**not** write `$PROFILE` — the same rule the Linux scripts follow with the
+dotbot-managed `.zshrc`. It prints the snippet to paste in when it finishes.
 
 ## Shell startup
 
